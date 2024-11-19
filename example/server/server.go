@@ -17,13 +17,16 @@ func (s *CustomHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello World! %s", time.Now())
 }
 
-func (s *CustomHttpServer) ServeSync() {
+func (s *CustomHttpServer) ServeSync() error {
 	fmt.Printf("serving HTTP - %s", s.serverPortStr)
-	http.ListenAndServe(s.serverPortStr, s)
+	return http.ListenAndServe(s.serverPortStr, s)
 }
 
-var appConfig = typekit.Get[config.MyAppConfig]()
+// here we retrieve the instance of our Config type.
+var appConfig = typekit.Resolve[config.MyAppConfig]()
 
-var Server = typekit.Register(CustomHttpServer{
+// here we register the instance of our server type,
+// for use with typekit.Resolve[]()
+var server = typekit.Register(CustomHttpServer{
 	serverPortStr: appConfig.ServerPortStr,
 })
