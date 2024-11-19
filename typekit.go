@@ -125,7 +125,7 @@ func Register[T any](val T, err ...error) *T {
 /*
 Unregisters an instance of the specified type. Should be
 used followed with Inject(), in order to properly set the
-dependencies after unregistering them
+dependencies after unregistering them.
 */
 func Unregister[T any]() {
 	// check if an instance of the specified type exists
@@ -136,6 +136,10 @@ func Unregister[T any]() {
 	instance.Unregister()
 }
 
+/*
+Used to inject dependencies after they have been registered.
+Should be used for creating mocks and other testing things.
+*/
 func Inject[T any](val T) {
 	// check if an instance of the specified type exists
 	bn, _, exists, _ := lookupInstance[T]()
