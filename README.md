@@ -1,6 +1,6 @@
 # TypeKit
 
-TypeKit is a lightweight dependency injection framework for Go. It works by resolving dependencies at automatically resolves dependencies by calling `typekit.Resolve()` within constructors.  
+TypeKit is a lightweight dependency injection framework for Go. It works by allowing the developer to register types using typekit.Register(), ensuring that each type is instantiated through its own constructor. Within these constructors, typekit.Resolve() takes care of fetching dependencies when they are needed, simplifying dependency management.
 
 ## 🔧 Features  
 
