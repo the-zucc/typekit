@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 )
@@ -15,6 +14,9 @@ type initializable interface {
 
 	// de-inits the struct
 	deinit()
+
+	// un-mocks the struct
+	unmock()
 }
 
 // this maps the static types to the instanceMap that are registered
@@ -37,6 +39,11 @@ type instance[T any] struct {
 	initialized bool
 	// the function that marks the init function for that instance type
 	initFn func() (T, error)
+
+	// true or false, whether the instance is mocked or not
+	mocked bool
+	// this function is to be run when initialize() is called if mocked is true
+	mockInit func() (T, error)
 }
 
 func (b *instance[T]) isInitialized() bool {
@@ -45,7 +52,11 @@ func (b *instance[T]) isInitialized() bool {
 
 func (b *instance[T]) initialize() {
 	var err error
-	*b.val, err = b.initFn()
+	if b.mocked {
+		*b.val, err = b.mockInit()
+	} else {
+		*b.val, err = b.initFn()
+	}
 	b.initialized = true
 	if err != nil {
 		panic(fmt.Errorf("could not initialize instance for type %T - %w", *b.val, err))
@@ -54,6 +65,15 @@ func (b *instance[T]) initialize() {
 
 func (b *instance[T]) deinit() {
 	b.initialized = false
+}
+
+func (b *instance[T]) mock(initFn func() (T, error)) {
+
+}
+
+func (b *instance[T]) unmock() {
+	b.mocked = false
+	b.mockInit = nil
 }
 
 /*
@@ -142,14 +162,38 @@ func Register[T any](initFn func() (T, error)) *T {
 Used to inject dependencies after they have been registered.
 Should be used for creating mocks and other testing things.
 */
-func Inject[T any](val T) {
+func Mock[T any](f func() (T, error)) {
 	// check if an instance of the specified type exists
 	bn, _, exists, _ := lookupInstance[T]()
 	if !exists {
 		panic(fmt.Errorf("cannot mock an instance that has not been registered"))
-	} else if bn.isInitialized() {
-		panic(errors.New("must unregister an instance in order to mock it"))
 	}
-	*bn.val = val
-	bn.initialized = true
+	bn.mockInit = f
+}
+
+/*
+Used to refresh the dependency tree. Essentially, it marks all
+instances as needing a re-initialization. In the proccess, instances
+which have been mocked using mock.Mock() will be initialized using
+their mock constructors.
+*/
+func RefreshTree() {
+	for _, val := range instanceMap {
+		// this will have the next call to Resolve() with that type re-run
+		// initialization function or the mock, whichever case applies
+		val.deinit()
+	}
+}
+
+func ResetMocks() {
+	for _, val := range instanceMap {
+		val.unmock()
+	}
+}
+
+func ResetMock[T any]() {
+	a, _, exists, _ := lookupInstance[T]()
+	if !exists {
+		panic(fmt.Errorf("could not reset mock for type %T - no instance of that type was registered", a.val))
+	}
 }
