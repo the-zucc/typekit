@@ -10,6 +10,7 @@ import (
 // this app is a simple web server. We define a custom class,
 // of which we manage the single instance using typekit.
 func main() {
+	// the below starts computing all dependencies in the tree
 	server := typekit.Resolve[server.CustomHttpServer]()
 	fmt.Printf(
 		"error running server - %s",

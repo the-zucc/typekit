@@ -22,11 +22,10 @@ func (s *CustomHttpServer) ServeSync() error {
 	return http.ListenAndServe(s.serverPortStr, s)
 }
 
-// here we retrieve the instance of our Config type.
-var appConfig = typekit.Resolve[config.MyAppConfig]()
-
 // here we register the instance of our server type,
 // for use with typekit.Resolve[]()
-var server = typekit.Register(CustomHttpServer{
-	serverPortStr: appConfig.ServerPortStr,
+var _ = typekit.Register(func() (CustomHttpServer, error) {
+	return CustomHttpServer{
+		serverPortStr: typekit.Resolve[config.MyAppConfig]().ServerPortStr,
+	}, nil
 })

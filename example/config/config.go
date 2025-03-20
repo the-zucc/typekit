@@ -13,9 +13,11 @@ type MyAppConfig struct {
 
 // here we register the instance of MyAppConfig
 // that is to be used alongside typekit.Resolve[]()
-var config = typekit.Register(MyAppConfig{
-	ServerPortStr: getenv("SERVER_PORT", ":8080"),
-	Protocol:      getenv("PROTOCOL", "http"),
+var _ = typekit.Register(func() (MyAppConfig, error) {
+	return MyAppConfig{
+		ServerPortStr: getenv("SERVER_PORT", ":8080"),
+		Protocol:      getenv("PROTOCOL", "http"),
+	}, nil
 })
 
 func getenv(key string, default_ string) string {
