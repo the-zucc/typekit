@@ -146,7 +146,7 @@ func Register[T any](initFn func() (T, error)) *T {
 		// set the instance in the instance map for the provided type
 		instanceMap[key] = &instance[T]{
 			val:         addr,
-			initialized: true,
+			initialized: false,
 			initFn:      initFn,
 		}
 		return addr
