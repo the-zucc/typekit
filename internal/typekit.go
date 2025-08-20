@@ -23,8 +23,10 @@ type initializable interface {
 var instanceMap = make(map[string]initializable)
 
 func lookupInstance[T any]() (b *instance[T], key string, exists bool, beantype reflect.Type) {
-	val := *new(T)
-	beantype = reflect.TypeOf(val)
+	beantype = reflect.TypeOf(new(T))
+	if beantype.Kind() == reflect.Ptr {
+		beantype = beantype.Elem()
+	}
 	key = beantype.PkgPath() + beantype.Name()
 	b, exists = instanceMap[key].(*instance[T])
 	return b, key, exists, beantype
