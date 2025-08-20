@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"reflect"
+	"sync"
 )
 
 type initializable interface {
@@ -21,6 +22,7 @@ type initializable interface {
 
 // this maps the static types to the instanceMap that are registered
 var instanceMap = make(map[string]initializable)
+var mutex = &sync.RWMutex{}
 
 func lookupInstance[T any]() (b *instance[T], key string, exists bool, beantype reflect.Type) {
 	beantype = reflect.TypeOf(new(T))
@@ -28,6 +30,8 @@ func lookupInstance[T any]() (b *instance[T], key string, exists bool, beantype 
 		beantype = beantype.Elem()
 	}
 	key = beantype.PkgPath() + beantype.Name()
+	mutex.RLock()
+	defer mutex.RUnlock()
 	b, exists = instanceMap[key].(*instance[T])
 	return b, key, exists, beantype
 }
@@ -146,6 +150,8 @@ func Register[T any](initFn func() (T, error)) *T {
 		// instantiate a pointer to a variable of the specified type
 		addr := new(T)
 		// set the instance in the instance map for the provided type
+		mutex.Lock()
+		defer mutex.Unlock()
 		instanceMap[key] = &instance[T]{
 			val:         addr,
 			initialized: false,
@@ -180,6 +186,8 @@ which have been mocked using mock.Mock() will be initialized using
 their mock constructors.
 */
 func RefreshTree() {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	for _, val := range instanceMap {
 		// this will have the next call to Resolve() with that type re-run
 		// initialization function or the mock, whichever case applies
@@ -188,6 +196,8 @@ func RefreshTree() {
 }
 
 func ResetMocks() {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	for _, val := range instanceMap {
 		val.unmock()
 	}
