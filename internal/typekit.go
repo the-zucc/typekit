@@ -177,6 +177,7 @@ func Mock[T any](f func() (T, error)) {
 		panic(fmt.Errorf("cannot mock an instance that has not been registered"))
 	}
 	bn.mockInit = f
+	bn.mocked = true
 }
 
 /*
